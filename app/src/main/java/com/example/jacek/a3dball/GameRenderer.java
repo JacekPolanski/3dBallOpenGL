@@ -9,6 +9,7 @@ import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
 
+import com.example.jacek.a3dball.meshes.BoardMesh;
 import com.example.jacek.a3dball.meshes.CubeMesh;
 import com.example.jacek.a3dball.meshes.TexturedCubeMesh;
 import com.example.jacek.a3dball.shaders.ShaderProgram;
@@ -21,16 +22,13 @@ import javax.microedition.khronos.opengles.GL10;
 public class GameRenderer implements GLSurfaceView.Renderer {
 
     // Macierze modelu, widoku i projekcji.
-    private float[] modelMatrix = new float[16];
+    private float[] ballMatrix = new float[16];
+    private float[] boardMatrix = new float[16];
     private float[] viewMatrix = new float[16];
     private float[] projectionMatrix = new float[16];
     private float[] rotationMatrix = new float[16];
     private float[] rotationXMatrix = new float[16];
     private float[] rotationYMatrix = new float[16];
-
-    // Iloczyn macierzy modelu, widoku i projekcji.
-    private float[] MVPMatrix = new float[16];
-    private float[] MVMatrix = new float[16];
 
     // Informacja o tym, z ilu elementów składają się poszczególne atrybuty.
     private final int POSITION_DATA_SIZE = 3;
@@ -43,24 +41,34 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     // jest "góra" (tzw. "up vector").
     private float[] camera;
 
-    private ShaderProgram colShaders;
-    private ShaderProgram texShaders;
+    private ShaderProgram ballTexShaders;
+    private ShaderProgram boardTexShaders;
+    private ShaderProgram wallTexShaders;
 
     // Kontekst aplikacji.
     private Context appContext = null;
 
     // Modele obiektów.
-    private CubeMesh cubeMesh;
     private TexturedCubeMesh texturedCubeMesh;
+    private BoardMesh boardMesh;
+    private CubeMesh wallMesh;
 
     // Adresy tekstur w pamięci modułu graficznego.
-    private int crateTextureDataHandle;
+    private int createBallTextureDataHandle;
+    private int createBoardTextureDataHandle;
+    private int createWallTextureDataHandle;
 
     private float xAngle = 0;
     private float yAngle = 0;
 
-    private float ballScale = 0.5f;
+    private final float BALL_SCALE = 0.3f;
     private float[] ballPosition;
+
+    private final float BOARD_LENGTH = 5.0f;
+    private final float BOARD_WIDTH = 2.5f;
+
+    private final float WALL_WIDTH = 0.2f;
+    private final float WALL_HEIGHT = 2.0f;
 
     GameRenderer() {
         camera = new float[]{
@@ -74,8 +82,9 @@ public class GameRenderer implements GLSurfaceView.Renderer {
                 0.f  // y
         };
 
-        cubeMesh = new CubeMesh();
         texturedCubeMesh = new TexturedCubeMesh();
+        boardMesh = new BoardMesh(BOARD_WIDTH, BOARD_LENGTH);
+        wallMesh = new CubeMesh();
     }
 
     @Override
@@ -93,19 +102,25 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         GLES20.glDepthMask(true);
 
         // Wczytanie tekstur do pamięci.
-        crateTextureDataHandle = readTexture(R.drawable.crate_borysses_deviantart_com);
+        createBallTextureDataHandle = readTexture(R.drawable.crate_borysses_deviantart_com);
+        createBoardTextureDataHandle = readTexture(R.drawable.stone_agf81_deviantart_com);
+        createWallTextureDataHandle = readTexture(R.drawable.wall);
 
-        // Utworzenie shaderów korzystających z kolorów wierzchołków.
-        colShaders = new ShaderProgram();
-        String[] colShadersAttributes = new String[]{"vertexPosition", "vertexColour", "vertexNormal"};
-        colShaders.init(R.raw.col_vertex_shader, R.raw.col_fragment_shader,
-                colShadersAttributes, appContext, "kolorowanie");
+        boardTexShaders = new ShaderProgram();
+        String[] boardTexShadersAttributes = new String[]{"vertexPosition", "vertexTexCoord", "vertexNormal"};
+        boardTexShaders.init(R.raw.tex_vertex_shader, R.raw.tex_fragment_shader,
+                boardTexShadersAttributes, appContext, "teksturowanie");
+
+        ballTexShaders = new ShaderProgram();
+        String[] ballTexShadersAttributes = new String[]{"vertexPosition", "vertexTexCoord", "vertexNormal"};
+        ballTexShaders.init(R.raw.tex_vertex_shader, R.raw.tex_fragment_shader,
+                ballTexShadersAttributes, appContext, "teksturowanie");
 
         // Utworzenie shaderów korzystających z tekstur.
-        texShaders = new ShaderProgram();
-        String[] texShadersAttributes = new String[]{"vertexPosition", "vertexTexCoord", "vertexNormal"};
-        texShaders.init(R.raw.tex_vertex_shader, R.raw.tex_fragment_shader,
-                texShadersAttributes, appContext, "teksturowanie");
+        wallTexShaders = new ShaderProgram();
+        String[] wallTexShadersAttributes = new String[]{"vertexPosition", "vertexTexCoord", "vertexNormal"};
+        wallTexShaders.init(R.raw.tex_vertex_shader, R.raw.tex_fragment_shader,
+                wallTexShadersAttributes, appContext, "teksturowanie");
     }
 
     @Override
@@ -139,23 +154,83 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         Matrix.setLookAtM(viewMatrix, 0, camera[0], camera[1], camera[2], camera[3],
                 camera[4], camera[5], camera[6], camera[7], camera[8]);
 
-        // Transformacja i rysowanie brył.
-        GLES20.glUseProgram(texShaders.programHandle); // Użycie shaderów korzystających z teksturowania.
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0); // Wykorzystanie tekstury o indeksie 0.
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, crateTextureDataHandle); // Podpięcie tekstury skrzyni.
-        GLES20.glUniform1i(texShaders._diffuseTextureHandle, 0); // Przekazanie shaderom indeksu tekstury (0).
+        renderBoard();
 
-        Matrix.setIdentityM(modelMatrix, 0); // Zresetowanie pozycji modelu.
-        Matrix.translateM(modelMatrix, 0, ballPosition[0], ballPosition[1], -1.0f); // Przesunięcie modelu.
-        Matrix.scaleM(modelMatrix, 0, ballScale, ballScale, ballScale);
+        renderWalls();
+
+        renderBall();
+    }
+
+    private void renderWalls()
+    {
+        GLES20.glUseProgram(wallTexShaders.programHandle); // Użycie shaderów korzystających z teksturowania.
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0); // Wykorzystanie tekstury o indeksie 0.
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, createWallTextureDataHandle); // Podpięcie tekstury skrzyni.
+        GLES20.glUniform1i(wallTexShaders._diffuseTextureHandle, 0); // Przekazanie shaderom indeksu tekstury (0).
+
+        float[] leftWallMatrix = new float[16];
+        Matrix.setIdentityM(leftWallMatrix,  0); // Zresetowanie pozycji modelu.
+        Matrix.translateM(leftWallMatrix, 0, -BOARD_WIDTH, 0, 0f); // Przesunięcie modelu.
+        Matrix.scaleM(leftWallMatrix, 0, WALL_WIDTH, BOARD_LENGTH, WALL_HEIGHT);
+
+        drawWall(wallMesh.getPositionBuffer(), null, wallMesh.getNormalBuffer(),
+                wallMesh.getTexCoordsBuffer(), wallTexShaders, wallMesh.getNumberOfVertices(), leftWallMatrix);
+
+        float[] rightWallMatrix = new float[16];
+        Matrix.setIdentityM(rightWallMatrix,  0); // Zresetowanie pozycji modelu.
+        Matrix.translateM(rightWallMatrix, 0, BOARD_WIDTH, 0, 0f); // Przesunięcie modelu.
+        Matrix.scaleM(rightWallMatrix, 0, WALL_WIDTH, BOARD_LENGTH, WALL_HEIGHT);
+        drawWall(wallMesh.getPositionBuffer(), null, wallMesh.getNormalBuffer(),
+                wallMesh.getTexCoordsBuffer(), wallTexShaders, wallMesh.getNumberOfVertices(), rightWallMatrix);
+
+        float[] topWallMatrix = new float[16];
+        Matrix.setIdentityM(topWallMatrix,  0); // Zresetowanie pozycji modelu.
+        Matrix.translateM(topWallMatrix, 0, 0, BOARD_LENGTH, 0f); // Przesunięcie modelu.
+        Matrix.scaleM(topWallMatrix, 0, BOARD_WIDTH + WALL_WIDTH, WALL_WIDTH, WALL_HEIGHT);
+        drawWall(wallMesh.getPositionBuffer(), null, wallMesh.getNormalBuffer(),
+                wallMesh.getTexCoordsBuffer(), wallTexShaders, wallMesh.getNumberOfVertices(), topWallMatrix);
+
+        float[] bottomWallMatrix = new float[16];
+        Matrix.setIdentityM(bottomWallMatrix,  0); // Zresetowanie pozycji modelu.
+        Matrix.translateM(bottomWallMatrix, 0, 0, -BOARD_LENGTH, 0f); // Przesunięcie modelu.
+        Matrix.scaleM(bottomWallMatrix, 0, BOARD_WIDTH + WALL_WIDTH, WALL_WIDTH, WALL_HEIGHT);
+        drawWall(wallMesh.getPositionBuffer(), null, wallMesh.getNormalBuffer(),
+                wallMesh.getTexCoordsBuffer(), wallTexShaders, wallMesh.getNumberOfVertices(), bottomWallMatrix);
+    }
+
+    private void renderBoard()
+    {
+        GLES20.glUseProgram(boardTexShaders.programHandle); // Użycie shaderów korzystających z teksturowania.
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0); // Wykorzystanie tekstury o indeksie 0.
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, createBoardTextureDataHandle); // Podpięcie tekstury skrzyni.
+        GLES20.glUniform1i(boardTexShaders._diffuseTextureHandle, 0); // Przekazanie shaderom indeksu tekstury (0).
+
+        Matrix.setIdentityM(boardMatrix, 0); // Zresetowanie pozycji modelu.
+        Matrix.translateM(boardMatrix, 0, 0, 0, 0f); // Przesunięcie modelu.
+
+        drawBoard(boardMesh.getPositionBuffer(), null, boardMesh.getNormalBuffer(),
+                boardMesh.getTexCoordsBuffer(), boardTexShaders, boardMesh.getNumberOfVertices());
+    }
+
+    private void renderBall()
+    {
+        // Transformacja i rysowanie brył.
+        GLES20.glUseProgram(ballTexShaders.programHandle); // Użycie shaderów korzystających z teksturowania.
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0); // Wykorzystanie tekstury o indeksie 0.
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, createBallTextureDataHandle); // Podpięcie tekstury skrzyni.
+        GLES20.glUniform1i(ballTexShaders._diffuseTextureHandle, 0); // Przekazanie shaderom indeksu tekstury (0).
+
+        Matrix.setIdentityM(ballMatrix, 0); // Zresetowanie pozycji modelu.
+        Matrix.translateM(ballMatrix, 0, ballPosition[0], ballPosition[1], 1.0f); // Przesunięcie modelu.
+        Matrix.scaleM(ballMatrix, 0, BALL_SCALE, BALL_SCALE, BALL_SCALE);
 
         Matrix.setRotateM(rotationXMatrix, 0, xAngle, -1.0f, 0, 0);
         Matrix.setRotateM(rotationYMatrix, 0, yAngle, 0, 1.0f, 0);
         Matrix.multiplyMM(rotationMatrix, 0, rotationXMatrix, 0, rotationYMatrix, 0);
 
-        drawShape(texturedCubeMesh.getPositionBuffer(), null,
+        drawBall(texturedCubeMesh.getPositionBuffer(), null,
                 texturedCubeMesh.getNormalBuffer(), texturedCubeMesh.getTexCoordsBuffer(),
-                texShaders, texturedCubeMesh.getNumberOfVertices());
+                ballTexShaders, texturedCubeMesh.getNumberOfVertices());
     }
 
     void setXAngle(float xAngle) {
@@ -166,13 +241,13 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         this.yAngle = yAngle;
     }
 
-    public void setBallPosition(float[] ballPosition) {
+    void setBallPosition(float[] ballPosition) {
         this.ballPosition = ballPosition;
     }
 
-    private void drawShape(final FloatBuffer positionBuffer, final FloatBuffer colourBuffer,
-                           final FloatBuffer normalBuffer, final FloatBuffer texCoordsBuffer,
-                           ShaderProgram shaderProgram, final int numberOfVertices) {
+    private void prepareDraw(final FloatBuffer positionBuffer, FloatBuffer colourBuffer,
+                             ShaderProgram shaderProgram, final FloatBuffer normalBuffer,
+                             final FloatBuffer texCoordsBuffer) {
         if (positionBuffer == null) {
             return;
         }
@@ -201,9 +276,59 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         GLES20.glVertexAttribPointer(shaderProgram._vertexNormalHandle, NORMAL_DATA_SIZE,
                 GLES20.GL_FLOAT, false, 0, normalBuffer);
         GLES20.glEnableVertexAttribArray(shaderProgram._vertexNormalHandle);
+    }
+
+    private void drawWall(final FloatBuffer positionBuffer, final FloatBuffer colourBuffer,
+                           final FloatBuffer normalBuffer, final FloatBuffer texCoordsBuffer,
+                           ShaderProgram shaderProgram, final int numberOfVertices, float[] matrix) {
+        prepareDraw(positionBuffer, colourBuffer, shaderProgram, normalBuffer, texCoordsBuffer);
+
+        float[] MVPMatrix = new float[16];
+        float[] MVMatrix = new float[16];
 
         // Przemnożenie macierzy modelu, widoku i projekcji.
-        Matrix.multiplyMM(MVMatrix, 0, viewMatrix, 0, modelMatrix, 0);
+        Matrix.multiplyMM(MVMatrix, 0, viewMatrix, 0, matrix, 0);
+        Matrix.multiplyMM(MVPMatrix, 0, projectionMatrix, 0, MVMatrix, 0);
+
+        // Przekazanie zmiennych uniform.
+        GLES20.glUniformMatrix4fv(shaderProgram._MVPMatrixHandle, 1, false, MVPMatrix, 0);
+        GLES20.glUniformMatrix4fv(shaderProgram._MVMatrixHandle, 1, false, MVMatrix, 0);
+
+        // Narysowanie obiektu.
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, numberOfVertices);
+    }
+
+    private void drawBoard(final FloatBuffer positionBuffer, final FloatBuffer colourBuffer,
+                           final FloatBuffer normalBuffer, final FloatBuffer texCoordsBuffer,
+                           ShaderProgram shaderProgram, final int numberOfVertices) {
+        prepareDraw(positionBuffer, colourBuffer, shaderProgram, normalBuffer, texCoordsBuffer);
+
+        float[] MVPMatrix = new float[16];
+        float[] MVMatrix = new float[16];
+
+
+        // Przemnożenie macierzy modelu, widoku i projekcji.
+        Matrix.multiplyMM(MVMatrix, 0, viewMatrix, 0, boardMatrix, 0);
+        Matrix.multiplyMM(MVPMatrix, 0, projectionMatrix, 0, MVMatrix, 0);
+
+        // Przekazanie zmiennych uniform.
+        GLES20.glUniformMatrix4fv(shaderProgram._MVPMatrixHandle, 1, false, MVPMatrix, 0);
+        GLES20.glUniformMatrix4fv(shaderProgram._MVMatrixHandle, 1, false, MVMatrix, 0);
+
+        // Narysowanie obiektu.
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, numberOfVertices);
+    }
+
+    private void drawBall(final FloatBuffer positionBuffer, final FloatBuffer colourBuffer,
+                          final FloatBuffer normalBuffer, final FloatBuffer texCoordsBuffer,
+                          ShaderProgram shaderProgram, final int numberOfVertices) {
+        prepareDraw(positionBuffer, colourBuffer, shaderProgram, normalBuffer, texCoordsBuffer);
+
+        float[] MVPMatrix = new float[16];
+        float[] MVMatrix = new float[16];
+
+        // Przemnożenie macierzy modelu, widoku i projekcji.
+        Matrix.multiplyMM(MVMatrix, 0, viewMatrix, 0, ballMatrix, 0);
         Matrix.multiplyMM(MVPMatrix, 0, projectionMatrix, 0, MVMatrix, 0);
 
         float[] scratch = new float[16];

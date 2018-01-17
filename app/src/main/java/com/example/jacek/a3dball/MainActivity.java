@@ -9,6 +9,9 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.support.v4.view.MotionEventCompat;
+import android.view.MotionEvent;
+
 public class MainActivity extends Activity implements SensorEventListener {
     protected SurfaceView glSurfaceView;
 
@@ -54,8 +57,22 @@ public class MainActivity extends Activity implements SensorEventListener {
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    public boolean onTouchEvent(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                yVelocity = 0.0f;
+                xVelocity = 0.0f;
+                xPosition = 0;
+                yPosition = 0;
 
+                break;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
     @Override

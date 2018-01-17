@@ -6,10 +6,6 @@ import android.opengl.GLSurfaceView;
 class SurfaceView extends GLSurfaceView {
     protected GameRenderer renderer = null;
 
-    private final float TOUCH_SCALE_FACTOR = 180.0f / 320;
-    private float mPreviousX;
-    private float mPreviousY;
-
     public SurfaceView(Context context) {
         super(context);
 
