@@ -21,6 +21,12 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class GameRenderer implements GLSurfaceView.Renderer {
 
+    public static final float BOARD_LENGTH = 5.0f;
+    public static final float BOARD_WIDTH = 2.5f;
+
+    public static final float WALL_WIDTH = 0.2f;
+    public static final float WALL_HEIGHT = 2.0f;
+
     // Macierze modelu, widoku i projekcji.
     private float[] ballMatrix = new float[16];
     private float[] boardMatrix = new float[16];
@@ -51,7 +57,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     // Modele obiektów.
     private TexturedCubeMesh texturedCubeMesh;
     private BoardMesh boardMesh;
-    private CubeMesh wallMesh;
+    private TexturedCubeMesh wallMesh;
 
     // Adresy tekstur w pamięci modułu graficznego.
     private int createBallTextureDataHandle;
@@ -63,12 +69,6 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
     private final float BALL_SCALE = 0.3f;
     private float[] ballPosition;
-
-    private final float BOARD_LENGTH = 5.0f;
-    private final float BOARD_WIDTH = 2.5f;
-
-    private final float WALL_WIDTH = 0.2f;
-    private final float WALL_HEIGHT = 2.0f;
 
     GameRenderer() {
         camera = new float[]{
@@ -84,7 +84,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
         texturedCubeMesh = new TexturedCubeMesh();
         boardMesh = new BoardMesh(BOARD_WIDTH, BOARD_LENGTH);
-        wallMesh = new CubeMesh();
+        wallMesh = new TexturedCubeMesh();
     }
 
     @Override
@@ -164,9 +164,9 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     private void renderWalls()
     {
         GLES20.glUseProgram(wallTexShaders.programHandle); // Użycie shaderów korzystających z teksturowania.
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0); // Wykorzystanie tekstury o indeksie 0.
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE1); // Wykorzystanie tekstury o indeksie 0.
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, createWallTextureDataHandle); // Podpięcie tekstury skrzyni.
-        GLES20.glUniform1i(wallTexShaders._diffuseTextureHandle, 0); // Przekazanie shaderom indeksu tekstury (0).
+        GLES20.glUniform1i(wallTexShaders._diffuseTextureHandle, 1); // Przekazanie shaderom indeksu tekstury (0).
 
         float[] leftWallMatrix = new float[16];
         Matrix.setIdentityM(leftWallMatrix,  0); // Zresetowanie pozycji modelu.
@@ -196,6 +196,20 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         Matrix.scaleM(bottomWallMatrix, 0, BOARD_WIDTH + WALL_WIDTH, WALL_WIDTH, WALL_HEIGHT);
         drawWall(wallMesh.getPositionBuffer(), null, wallMesh.getNormalBuffer(),
                 wallMesh.getTexCoordsBuffer(), wallTexShaders, wallMesh.getNumberOfVertices(), bottomWallMatrix);
+
+        float[] movingWall1Matrix = new float[16];
+        Matrix.setIdentityM(movingWall1Matrix,  0); // Zresetowanie pozycji modelu.
+        Matrix.translateM(movingWall1Matrix, 0, -1f, 1f, 0f); // Przesunięcie modelu.
+        Matrix.scaleM(movingWall1Matrix, 0, 0.5f, WALL_WIDTH, WALL_HEIGHT);
+        drawWall(wallMesh.getPositionBuffer(), null, wallMesh.getNormalBuffer(),
+                wallMesh.getTexCoordsBuffer(), wallTexShaders, wallMesh.getNumberOfVertices(), movingWall1Matrix);
+
+        float[] movingWall2Matrix = new float[16];
+        Matrix.setIdentityM(movingWall2Matrix,  0); // Zresetowanie pozycji modelu.
+        Matrix.translateM(movingWall2Matrix, 0, 1f, -1f, 0f); // Przesunięcie modelu.
+        Matrix.scaleM(movingWall2Matrix, 0, 0.5f, WALL_WIDTH, WALL_HEIGHT);
+        drawWall(wallMesh.getPositionBuffer(), null, wallMesh.getNormalBuffer(),
+                wallMesh.getTexCoordsBuffer(), wallTexShaders, wallMesh.getNumberOfVertices(), movingWall2Matrix);
     }
 
     private void renderBoard()

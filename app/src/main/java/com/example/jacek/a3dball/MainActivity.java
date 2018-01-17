@@ -9,7 +9,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.support.v4.view.MotionEventCompat;
 import android.view.MotionEvent;
 
 public class MainActivity extends Activity implements SensorEventListener {
@@ -22,6 +21,14 @@ public class MainActivity extends Activity implements SensorEventListener {
     private float xVelocity = 0.0f;
     private int xPosition = 0;
     private int yPosition = 0;
+
+    private boolean isBounceXPositive = false;
+    private boolean isBounceXNegative = false;
+    private boolean isBounceYPositive = false;
+    private boolean isBounceYNegative = false;
+    private static final int BOUNCE_VALUE = 50;
+    private int bounceXValue = BOUNCE_VALUE;
+    private int bounceYValue = 2 * BOUNCE_VALUE;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -40,18 +47,36 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        if (xPosition > (int) GameRenderer.BOARD_WIDTH * 100) {
+            isBounceXPositive = true;
+        } else if (xPosition < - (int) GameRenderer.BOARD_WIDTH * 100) {
+            isBounceXNegative = true;
+        }
+
+        if (yPosition > (int) GameRenderer.BOARD_LENGTH * 100 - 50) {
+            isBounceYPositive = true;
+        } else if (yPosition < - (int) GameRenderer.BOARD_LENGTH * 100 + 50) {
+            isBounceYNegative = true;
+        }
+
         float xAcceleration = event.values[1];
         float yAcceleration = event.values[0];
-
         float frameTime = 0.666f;
+
         xVelocity += (xAcceleration * frameTime);
         yVelocity += (yAcceleration * frameTime);
 
         float x = (xVelocity / 2) * frameTime;
         float y = (yVelocity / 2) * frameTime;
 
-        xPosition += x;
-        yPosition += y;
+        if (!isBounceXPositive && !isBounceXNegative) {
+            xPosition += x;
+        }
+        if (!isBounceYPositive && !isBounceYNegative) {
+            yPosition += y;
+        }
+
+        bounceBall();
 
         glSurfaceView.setBallPosition(xPosition, yPosition);
     }
@@ -97,5 +122,48 @@ public class MainActivity extends Activity implements SensorEventListener {
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    }
+
+    private void bounceBall()
+    {
+        if (isBounceXPositive) {
+            xPosition--;
+            if (bounceXValue == 0) {
+                isBounceXPositive = false;
+                bounceXValue = BOUNCE_VALUE;
+            } else {
+                bounceXValue--;
+            }
+        }
+
+        if (isBounceXNegative) {
+            xPosition++;
+            if (bounceXValue == 0) {
+                isBounceXNegative = false;
+                bounceXValue = BOUNCE_VALUE;
+            } else {
+                bounceXValue--;
+            }
+        }
+
+        if (isBounceYPositive) {
+            yPosition--;
+            if (bounceYValue == 0) {
+                isBounceYPositive = false;
+                bounceYValue = BOUNCE_VALUE;
+            } else {
+                bounceYValue--;
+            }
+        }
+
+        if (isBounceYNegative) {
+            yPosition++;
+            if (bounceYValue == 0) {
+                isBounceYNegative = false;
+                bounceYValue = BOUNCE_VALUE;
+            } else {
+                bounceYValue--;
+            }
+        }
     }
 }
