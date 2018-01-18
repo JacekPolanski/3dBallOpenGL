@@ -59,6 +59,22 @@ public class MainActivity extends Activity implements SensorEventListener {
             isBounceYNegative = true;
         }
 
+//        if (yPosition > (int) glSurfaceView.getWall1Position()[1] * 100) {
+//            if (xPosition > (int) glSurfaceView.getWall1Position()[0] * 100) {
+//                isBounceXPositive = true;
+//            } else if (xPosition < (int) glSurfaceView.getWall1Position()[0] * 100) {
+//                isBounceXNegative = true;
+//            }
+//            isBounceYPositive = true;
+//        } else if (yPosition < (int) glSurfaceView.getWall1Position()[1] * 100) {
+//            if (xPosition > (int) glSurfaceView.getWall1Position()[0] * 100) {
+//                isBounceXPositive = true;
+//            } else if (xPosition < (int) glSurfaceView.getWall1Position()[0] * 100) {
+//                isBounceXNegative = true;
+//            }
+//            isBounceYNegative = true;
+//        }
+
         float xAcceleration = event.values[1];
         float yAcceleration = event.values[0];
         float frameTime = 0.666f;

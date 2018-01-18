@@ -29,4 +29,12 @@ class SurfaceView extends GLSurfaceView {
         renderer.setYAngle(x*100);
         requestRender();
     }
+
+    public float[] getWall1Position() {
+        return renderer.getWall1Position();
+    }
+
+    public float[] getWall2Position() {
+        return renderer.getWall2Position();
+    }
 }

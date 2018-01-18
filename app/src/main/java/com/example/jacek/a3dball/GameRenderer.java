@@ -223,6 +223,14 @@ public class GameRenderer implements GLSurfaceView.Renderer {
                 tan2X * (BOARD_WIDTH * wall2XMovementDirection - wall2Position[0] * wall2XMovementDirection) * WALL_MOVEMENT_STEP * tan2X;
     }
 
+    public float[] getWall1Position() {
+        return wall1Position;
+    }
+
+    public float[] getWall2Position() {
+        return wall2Position;
+    }
+
     private void renderWalls()
     {
         GLES20.glUseProgram(wallTexShaders.programHandle); // Użycie shaderów korzystających z teksturowania.
