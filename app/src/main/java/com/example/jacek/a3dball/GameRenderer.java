@@ -10,11 +10,11 @@ import android.opengl.Matrix;
 import android.util.Log;
 
 import com.example.jacek.a3dball.meshes.BoardMesh;
-import com.example.jacek.a3dball.meshes.CubeMesh;
 import com.example.jacek.a3dball.meshes.TexturedCubeMesh;
 import com.example.jacek.a3dball.shaders.ShaderProgram;
 
 import java.nio.FloatBuffer;
+import java.util.Random;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -26,6 +26,8 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
     public static final float WALL_WIDTH = 0.2f;
     public static final float WALL_HEIGHT = 2.0f;
+
+    private static final float WALL_MOVEMENT_STEP = 0.01f;
 
     // Macierze modelu, widoku i projekcji.
     private float[] ballMatrix = new float[16];
@@ -69,6 +71,17 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
     private final float BALL_SCALE = 0.3f;
     private float[] ballPosition;
+
+    private float[] wall1Position = new float[] {-1f,1f};
+    private float[] wall2Position = new float[] {1f,-1f};;
+    private int wall1XMovementDirection = 1;
+    private int wall1YMovementDirection = 1;
+    private int wall2XMovementDirection = -1;
+    private int wall2YMovementDirection = -1;
+    private int wall1XAngle = 0;
+    private int wall2XAngle = 0;
+    private int wall1YAngle = 0;
+    private int wall2YAngle = 0;
 
     GameRenderer() {
         camera = new float[]{
@@ -159,6 +172,55 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         renderWalls();
 
         renderBall();
+
+        Random rand = new Random();
+
+        if (wall1Position[0] > BOARD_WIDTH - 0.7f) {
+            wall1XMovementDirection = -1;
+            wall1XAngle = rand.nextInt(90) - 45;
+        }
+        if (wall1Position[1] > BOARD_LENGTH - 0.7f) {
+            wall1XMovementDirection = -1;
+            wall1XAngle = rand.nextInt(90) - 45;
+        }
+        if (wall1Position[0] < -BOARD_WIDTH + 0.7f) {
+            wall1XMovementDirection = 1;
+            wall1XAngle = rand.nextInt(90) - 45;
+        }
+        if (wall1Position[1] < -BOARD_LENGTH + 0.7f) {
+            wall1XMovementDirection = 1;
+            wall1XAngle = rand.nextInt(90) - 45;
+        }
+        if (wall2Position[0] > BOARD_WIDTH - 0.7f) {
+            wall2XMovementDirection = -1;
+            wall2XAngle = rand.nextInt(90) - 45;
+        }
+        if (wall2Position[1] > BOARD_LENGTH - 0.7f) {
+            wall2XMovementDirection = -1;
+            wall2XAngle = rand.nextInt(90) - 45;
+        }
+        if (wall2Position[0] < -BOARD_WIDTH + 0.7f) {
+            wall2XMovementDirection = 1;
+            wall2XAngle = rand.nextInt(90) - 45;
+        }
+        if (wall2Position[1] < -BOARD_LENGTH + 0.7f) {
+            wall2XMovementDirection = 1;
+            wall2XAngle = rand.nextInt(90) - 45;
+        }
+
+        wall1Position[0] += wall1XMovementDirection * WALL_MOVEMENT_STEP;
+        wall2Position[0] += wall2XMovementDirection * WALL_MOVEMENT_STEP;
+
+        double wall1XRadians = Math.toRadians(wall1XAngle);
+        double wall2XRadians = Math.toRadians(wall2XAngle);
+
+        double tan1X = Math.tan(wall1XRadians);
+        double tan2X = Math.tan(wall2XRadians);
+
+        wall1Position[1] +=
+                tan1X * (BOARD_WIDTH * wall1XMovementDirection - wall1Position[0] * wall1XMovementDirection) * WALL_MOVEMENT_STEP * tan1X;
+        wall2Position[1] +=
+                tan2X * (BOARD_WIDTH * wall2XMovementDirection - wall2Position[0] * wall2XMovementDirection) * WALL_MOVEMENT_STEP * tan2X;
     }
 
     private void renderWalls()
@@ -199,14 +261,14 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
         float[] movingWall1Matrix = new float[16];
         Matrix.setIdentityM(movingWall1Matrix,  0); // Zresetowanie pozycji modelu.
-        Matrix.translateM(movingWall1Matrix, 0, -1f, 1f, 0f); // Przesunięcie modelu.
+        Matrix.translateM(movingWall1Matrix, 0, wall1Position[0], wall1Position[1], 0f); // Przesunięcie modelu.
         Matrix.scaleM(movingWall1Matrix, 0, 0.5f, WALL_WIDTH, WALL_HEIGHT);
         drawWall(wallMesh.getPositionBuffer(), null, wallMesh.getNormalBuffer(),
                 wallMesh.getTexCoordsBuffer(), wallTexShaders, wallMesh.getNumberOfVertices(), movingWall1Matrix);
 
         float[] movingWall2Matrix = new float[16];
         Matrix.setIdentityM(movingWall2Matrix,  0); // Zresetowanie pozycji modelu.
-        Matrix.translateM(movingWall2Matrix, 0, 1f, -1f, 0f); // Przesunięcie modelu.
+        Matrix.translateM(movingWall2Matrix, 0, wall2Position[0], wall2Position[1], 0f); // Przesunięcie modelu.
         Matrix.scaleM(movingWall2Matrix, 0, 0.5f, WALL_WIDTH, WALL_HEIGHT);
         drawWall(wallMesh.getPositionBuffer(), null, wallMesh.getNormalBuffer(),
                 wallMesh.getTexCoordsBuffer(), wallTexShaders, wallMesh.getNumberOfVertices(), movingWall2Matrix);
