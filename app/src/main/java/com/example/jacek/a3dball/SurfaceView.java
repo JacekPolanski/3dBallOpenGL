@@ -37,4 +37,12 @@ class SurfaceView extends GLSurfaceView {
     public float[] getWall2Position() {
         return renderer.getWall2Position();
     }
+
+    public void setCameraHeight(float cameraHeight) {
+        renderer.setCameraHeight(cameraHeight);
+    }
+
+    public void flipFollowingCameraOnOff() {
+        renderer.flipFollowingCameraOnOff();
+    }
 }

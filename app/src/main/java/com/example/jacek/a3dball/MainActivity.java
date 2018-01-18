@@ -9,9 +9,13 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.support.v4.view.GestureDetectorCompat;
+import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.View;
 
-public class MainActivity extends Activity implements SensorEventListener {
+public class MainActivity extends Activity implements SensorEventListener, GestureDetector.OnGestureListener {
     protected SurfaceView glSurfaceView;
 
     private SensorManager mSensorManager;
@@ -30,6 +34,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     private int bounceXValue = BOUNCE_VALUE;
     private int bounceYValue = 2 * BOUNCE_VALUE;
 
+    private GestureDetectorCompat mDetector;
+
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -43,6 +49,8 @@ public class MainActivity extends Activity implements SensorEventListener {
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         assert mSensorManager != null;
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+
+        mDetector = new GestureDetectorCompat(this,this);
     }
 
     @Override
@@ -95,21 +103,6 @@ public class MainActivity extends Activity implements SensorEventListener {
         bounceBall();
 
         glSurfaceView.setBallPosition(xPosition, yPosition);
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                yVelocity = 0.0f;
-                xVelocity = 0.0f;
-                xPosition = 0;
-                yPosition = 0;
-
-                break;
-        }
-
-        return true;
     }
 
     @Override
@@ -181,5 +174,48 @@ public class MainActivity extends Activity implements SensorEventListener {
                 bounceYValue--;
             }
         }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event){
+        this.mDetector.onTouchEvent(event);
+        // Be sure to call the superclass implementation
+        return super.onTouchEvent(event);
+    }
+
+    @Override
+    public boolean onDown(MotionEvent e) {
+        return false;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent e) {
+
+    }
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent e) {
+        glSurfaceView.flipFollowingCameraOnOff();
+        return false;
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent event1, MotionEvent event2, float distanceX,
+                            float distanceY) {
+        glSurfaceView.setCameraHeight(distanceY/10);
+        return true;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent e) {
+        yVelocity = 0.0f;
+        xVelocity = 0.0f;
+        xPosition = 0;
+        yPosition = 0;
+    }
+
+    @Override
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+        return false;
     }
 }

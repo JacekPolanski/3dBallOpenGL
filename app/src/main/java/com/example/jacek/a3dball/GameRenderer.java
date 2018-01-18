@@ -28,6 +28,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     public static final float WALL_HEIGHT = 2.0f;
 
     private static final float WALL_MOVEMENT_STEP = 0.01f;
+    private static final float CAMERA_DEFAULT_HEIGHT = 10.f;
 
     // Macierze modelu, widoku i projekcji.
     private float[] ballMatrix = new float[16];
@@ -47,7 +48,11 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     // Wartości wykorzystywane przez naszą kamerę. Pierwsze trzy elementy opisują położenie obserwatora,
     // kolejne trzy wskazują na punkt, na który on patrzy, a ostatnie wartości definiują, w którym kierunku
     // jest "góra" (tzw. "up vector").
-    private float[] camera;
+    private float[] camera = new float[]{
+            0.f, 0.f, CAMERA_DEFAULT_HEIGHT, // pozycja obserwatora
+            0.f, 0.f, 0.f,  // punkt na który obserwator patrzy
+            0.f, 1.f, 0.f   // "up vector"
+    };
 
     private ShaderProgram ballTexShaders;
     private ShaderProgram boardTexShaders;
@@ -83,13 +88,9 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     private int wall1YAngle = 0;
     private int wall2YAngle = 0;
 
-    GameRenderer() {
-        camera = new float[]{
-                0.f, 0.f, 10.f, // pozycja obserwatora
-                0.f, 0.f, 0.f,  // punkt na który obserwator patrzy
-                0.f, 1.f, 0.f   // "up vector"
-        };
+    private boolean isFollowingCamera = false;
 
+    GameRenderer() {
         ballPosition = new float[] {
                 0.f, // x
                 0.f  // y
@@ -164,8 +165,13 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
         // Ustawienie kamery.
         Matrix.setIdentityM(viewMatrix, 0);
-        Matrix.setLookAtM(viewMatrix, 0, camera[0], camera[1], camera[2], camera[3],
-                camera[4], camera[5], camera[6], camera[7], camera[8]);
+        if (isFollowingCamera) {
+            Matrix.setLookAtM(viewMatrix, 0, camera[0], camera[1], camera[2], ballPosition[0],
+                    ballPosition[1], camera[5], camera[6], camera[7], camera[8]);
+        } else {
+            Matrix.setLookAtM(viewMatrix, 0, camera[0], camera[1], camera[2], camera[3],
+                    camera[4], camera[5], camera[6], camera[7], camera[8]);
+        }
 
         renderBoard();
 
@@ -229,6 +235,21 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
     public float[] getWall2Position() {
         return wall2Position;
+    }
+
+    public void setCameraHeight(float cameraHeight) {
+        if (isFollowingCamera) {
+            camera[2] += cameraHeight;
+
+            if (camera[2] <= 5.f) {
+                camera[2] = 5.f;
+            }
+        }
+    }
+
+    public void flipFollowingCameraOnOff() {
+        isFollowingCamera = !isFollowingCamera;
+        camera[2] = CAMERA_DEFAULT_HEIGHT;
     }
 
     private void renderWalls()
