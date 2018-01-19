@@ -4,45 +4,55 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity" >
 
-    <RelativeLayout
-        android:id="@+id/containerLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:layout_toRightOf="@+id/menuLayout" >
-
-        <View
-            android:id="@+id/tempView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </RelativeLayout>
-
     <LinearLayout
         android:id="@+id/menuLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:orientation="vertical" >
+        android:orientation="horizontal">
 
-        <SeekBar
-            android:id="@+id/lightSeekBar"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content" />
-
-        <Button
-            android:id="@+id/lightOrangeButton"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Orange" />
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="13dp"
+            android:layout_toEndOf="@+id/menuLayout"
+            android:text="Zagęszczenie" />
 
-        <Button
-            android:id="@+id/lightWhiteButton"
-            android:layout_width="match_parent"
+        <EditText
+            android:id="@+id/editText3"
+            android:layout_width="110dp"
             android:layout_height="wrap_content"
-            android:text="White" />
+            android:ems="10"
+            android:hint="Zagęszczenie"
+            android:inputType="numberSigned"
+            android:text="0" />
     </LinearLayout>
+
+    <RelativeLayout
+        android:id="@+id/containerLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/menuLayout">
+
+        <View
+            android:id="@+id/tempView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="48dp" />
+    </RelativeLayout>
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@+id/menuLayout"
+        android:onClick="onButtonClick"
+        android:text="Ustaw" />
 
 </RelativeLayout>

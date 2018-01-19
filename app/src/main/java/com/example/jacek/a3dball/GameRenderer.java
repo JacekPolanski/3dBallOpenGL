@@ -9,6 +9,7 @@ import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
 
+import com.example.jacek.a3dball.meshes.BallMesh;
 import com.example.jacek.a3dball.meshes.BoardMesh;
 import com.example.jacek.a3dball.meshes.TexturedCubeMesh;
 import com.example.jacek.a3dball.shaders.ShaderProgram;
@@ -26,6 +27,9 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
     public static final float WALL_WIDTH = 0.2f;
     public static final float WALL_HEIGHT = 2.0f;
+
+    public static final float BALL_MIN_DENSITY = 20.0f;
+    public static final float BALL_MAX_DENSITY = 90.0f;
 
     private static final float WALL_MOVEMENT_STEP = 0.01f;
     private static final float CAMERA_DEFAULT_HEIGHT = 10.f;
@@ -62,7 +66,8 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     private Context appContext = null;
 
     // Modele obiektów.
-    private TexturedCubeMesh texturedCubeMesh;
+//    private TexturedCubeMesh texturedCubeMesh;
+    private BallMesh texturedCubeMesh;
     private BoardMesh boardMesh;
     private TexturedCubeMesh wallMesh;
 
@@ -74,21 +79,20 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     private float xAngle = 0;
     private float yAngle = 0;
 
-    private final float BALL_SCALE = 0.3f;
+    private final float BALL_SCALE = 0.5f;
     private float[] ballPosition;
 
     private float[] wall1Position = new float[] {-1f,1f};
     private float[] wall2Position = new float[] {1f,-1f};;
     private int wall1XMovementDirection = 1;
-    private int wall1YMovementDirection = 1;
     private int wall2XMovementDirection = -1;
-    private int wall2YMovementDirection = -1;
     private int wall1XAngle = 0;
     private int wall2XAngle = 0;
-    private int wall1YAngle = 0;
-    private int wall2YAngle = 0;
 
     private boolean isFollowingCamera = false;
+
+    private float ballTrianglesDensity = 30f;
+    private float newBallTrianglesDensity = ballTrianglesDensity;
 
     GameRenderer() {
         ballPosition = new float[] {
@@ -96,7 +100,8 @@ public class GameRenderer implements GLSurfaceView.Renderer {
                 0.f  // y
         };
 
-        texturedCubeMesh = new TexturedCubeMesh();
+        texturedCubeMesh = new BallMesh();
+        texturedCubeMesh.Draw(ballTrianglesDensity);
         boardMesh = new BoardMesh(BOARD_WIDTH, BOARD_LENGTH);
         wallMesh = new TexturedCubeMesh();
     }
@@ -155,6 +160,18 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         final float left = ratio * bottom;
         final float right = ratio * top;
         Matrix.frustumM(projectionMatrix, 0, left, right, bottom, top, near, far);
+    }
+
+    public void setNewBallTrianglesDensity(float newBallTrianglesDensity) {
+        this.newBallTrianglesDensity = newBallTrianglesDensity;
+    }
+
+    public float getBallTrianglesDensity() {
+        return ballTrianglesDensity;
+    }
+
+    public void setBallTrianglesDensity(float ballTrianglesDensity) {
+        this.ballTrianglesDensity = ballTrianglesDensity;
     }
 
     @Override
@@ -319,6 +336,11 @@ public class GameRenderer implements GLSurfaceView.Renderer {
 
     private void renderBall()
     {
+        if (newBallTrianglesDensity != ballTrianglesDensity) {
+            texturedCubeMesh.Draw(newBallTrianglesDensity);
+            ballTrianglesDensity = newBallTrianglesDensity;
+        }
+
         // Transformacja i rysowanie brył.
         GLES20.glUseProgram(ballTexShaders.programHandle); // Użycie shaderów korzystających z teksturowania.
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0); // Wykorzystanie tekstury o indeksie 0.
@@ -326,7 +348,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         GLES20.glUniform1i(ballTexShaders._diffuseTextureHandle, 0); // Przekazanie shaderom indeksu tekstury (0).
 
         Matrix.setIdentityM(ballMatrix, 0); // Zresetowanie pozycji modelu.
-        Matrix.translateM(ballMatrix, 0, ballPosition[0], ballPosition[1], 1.0f); // Przesunięcie modelu.
+        Matrix.translateM(ballMatrix, 0, ballPosition[0], ballPosition[1], 1.5f); // Przesunięcie modelu.
         Matrix.scaleM(ballMatrix, 0, BALL_SCALE, BALL_SCALE, BALL_SCALE);
 
         Matrix.setRotateM(rotationXMatrix, 0, xAngle, -1.0f, 0, 0);
@@ -444,7 +466,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         GLES20.glUniformMatrix4fv(shaderProgram._MVMatrixHandle, 1, false, MVMatrix, 0);
 
         // Narysowanie obiektu.
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, numberOfVertices);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, numberOfVertices);
     }
 
     void setContext(Context context) {

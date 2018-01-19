@@ -9,11 +9,14 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.support.v4.view.GestureDetectorCompat;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 public class MainActivity extends Activity implements SensorEventListener, GestureDetector.OnGestureListener {
     protected SurfaceView glSurfaceView;
@@ -42,15 +45,35 @@ public class MainActivity extends Activity implements SensorEventListener, Gestu
         super.onCreate(savedInstanceState);
         glSurfaceView = new SurfaceView(this);
 
-        setContentView(glSurfaceView);
+        setContentView(R.layout.activity_main);
 
-        glSurfaceView.getWidth();
+        RelativeLayout layout = findViewById(R.id.containerLayout);
+        layout.addView(glSurfaceView);
+
+        EditText densityText = findViewById(R.id.editText3);
+        densityText.setText(Float.toString(glSurfaceView.getBallTrianglesDensity()));
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         assert mSensorManager != null;
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
         mDetector = new GestureDetectorCompat(this,this);
+    }
+
+    public void onButtonClick(View v) throws RemoteException {
+        EditText densityText = findViewById(R.id.editText3);
+        float density = Float.parseFloat(densityText.getText().toString());
+
+        if (density > GameRenderer.BALL_MAX_DENSITY) {
+            density = GameRenderer.BALL_MAX_DENSITY;
+            densityText.setText(Float.toString(GameRenderer.BALL_MAX_DENSITY));
+        }
+        if (density < GameRenderer.BALL_MIN_DENSITY) {
+            density = GameRenderer.BALL_MIN_DENSITY;
+            densityText.setText(Float.toString(GameRenderer.BALL_MIN_DENSITY));
+        }
+
+        glSurfaceView.setBallTrianglesDensity(density);
     }
 
     @Override

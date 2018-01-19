@@ -4,6 +4,7 @@ import android.content.Context;
 import android.opengl.GLSurfaceView;
 
 class SurfaceView extends GLSurfaceView {
+    private float ballTrianglesDensity = 30f;
     protected GameRenderer renderer = null;
 
     public SurfaceView(Context context) {
@@ -15,6 +16,7 @@ class SurfaceView extends GLSurfaceView {
         // Przypisanie renderera do widoku.
         renderer = new GameRenderer();
         renderer.setContext(getContext());
+        renderer.setBallTrianglesDensity(ballTrianglesDensity);
         setRenderer(renderer);
 
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -28,6 +30,10 @@ class SurfaceView extends GLSurfaceView {
         renderer.setXAngle(y*100);
         renderer.setYAngle(x*100);
         requestRender();
+    }
+
+    public float getBallTrianglesDensity() {
+        return renderer.getBallTrianglesDensity();
     }
 
     public float[] getWall1Position() {
@@ -44,5 +50,9 @@ class SurfaceView extends GLSurfaceView {
 
     public void flipFollowingCameraOnOff() {
         renderer.flipFollowingCameraOnOff();
+    }
+
+    public void setBallTrianglesDensity(float ballTrianglesDensity) {
+        renderer.setNewBallTrianglesDensity(ballTrianglesDensity);
     }
 }
