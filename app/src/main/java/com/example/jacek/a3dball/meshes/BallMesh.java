@@ -12,9 +12,10 @@ public class BallMesh extends BaseMesh {
 
         final float[] positionData = new float[10000000];
         final float[] colourData = new float[]{};
-        final float[] normalData = new float[]{};
+        final float[] texCoordData = new float[100000];
 
         int n = 0;
+        int t = 0;
         numberOfVertices = 0;
         for (angleA = -90.0f; angleA <= 90.0f; angleA += step) { // 3
 
@@ -36,13 +37,20 @@ public class BallMesh extends BaseMesh {
                 positionData[n + 3 + 1] = (h1);
                 positionData[n + 3 + 2] = (r1 * sin);
 
+                texCoordData[t] = (r2 * cos);
+                texCoordData[t + 1] = (h2);
+
+                texCoordData[t + 2] = (r1 * cos);
+                texCoordData[t + 2 + 1] = (h1);
+
                 n += 6;
+                t += 4;
                 numberOfVertices += 2;
             }
         }
 
         positionBuffer = createBuffer(positionData);
-        colourBuffer = createBuffer(positionData);
+        texCoordsBuffer = createBuffer(texCoordData);
         normalBuffer = createBuffer(positionData);
     }
 }

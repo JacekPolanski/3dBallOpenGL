@@ -11,13 +11,13 @@ public class BoardMesh extends BaseMesh {
                 width, height, 1.0f,
         };
 
-        final float[] colourData = {
-                1.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 1.0f,
+        final float[] texCoordData = {
+                -width, height,
+                -width, -height,
+                width, height,
+                -width, -height,
+                width, -height,
+                width, height,
         };
 
         final float[] normalData = {
@@ -32,7 +32,7 @@ public class BoardMesh extends BaseMesh {
         numberOfVertices = 6;
 
         positionBuffer = createBuffer(positionData);
-        colourBuffer = createBuffer(colourData);
+        texCoordsBuffer = createBuffer(texCoordData);
         normalBuffer = createBuffer(normalData);
     }
 }

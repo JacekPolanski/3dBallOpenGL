@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/3dBall.iml" filepath="$PROJECT_DIR$/3dBall.iml" />
+      <module fileurl="file://C:\Users\jpolanski\AndroidStudioProjects\3dBallOpenGL\3dBall.iml" filepath="C:\Users\jpolanski\AndroidStudioProjects\3dBallOpenGL\3dBall.iml" />
+      <module fileurl="file://$PROJECT_DIR$/3dBallOpenGL.iml" filepath="$PROJECT_DIR$/3dBallOpenGL.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

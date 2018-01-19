@@ -66,8 +66,8 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     private Context appContext = null;
 
     // Modele obiektów.
-//    private TexturedCubeMesh texturedCubeMesh;
-    private BallMesh texturedCubeMesh;
+//    private TexturedCubeMesh ballMesh;
+    private BallMesh ballMesh;
     private BoardMesh boardMesh;
     private TexturedCubeMesh wallMesh;
 
@@ -100,8 +100,8 @@ public class GameRenderer implements GLSurfaceView.Renderer {
                 0.f  // y
         };
 
-        texturedCubeMesh = new BallMesh();
-        texturedCubeMesh.Draw(ballTrianglesDensity);
+        ballMesh = new BallMesh();
+        ballMesh.Draw(ballTrianglesDensity);
         boardMesh = new BoardMesh(BOARD_WIDTH, BOARD_LENGTH);
         wallMesh = new TexturedCubeMesh();
     }
@@ -121,7 +121,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         GLES20.glDepthMask(true);
 
         // Wczytanie tekstur do pamięci.
-        createBallTextureDataHandle = readTexture(R.drawable.crate_borysses_deviantart_com);
+        createBallTextureDataHandle = readTexture(R.drawable.earth);
         createBoardTextureDataHandle = readTexture(R.drawable.stone_agf81_deviantart_com);
         createWallTextureDataHandle = readTexture(R.drawable.wall);
 
@@ -323,9 +323,9 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     private void renderBoard()
     {
         GLES20.glUseProgram(boardTexShaders.programHandle); // Użycie shaderów korzystających z teksturowania.
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0); // Wykorzystanie tekstury o indeksie 0.
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE1); // Wykorzystanie tekstury o indeksie 0.
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, createBoardTextureDataHandle); // Podpięcie tekstury skrzyni.
-        GLES20.glUniform1i(boardTexShaders._diffuseTextureHandle, 0); // Przekazanie shaderom indeksu tekstury (0).
+        GLES20.glUniform1i(boardTexShaders._diffuseTextureHandle, 1); // Przekazanie shaderom indeksu tekstury (0).
 
         Matrix.setIdentityM(boardMatrix, 0); // Zresetowanie pozycji modelu.
         Matrix.translateM(boardMatrix, 0, 0, 0, 0f); // Przesunięcie modelu.
@@ -337,7 +337,7 @@ public class GameRenderer implements GLSurfaceView.Renderer {
     private void renderBall()
     {
         if (newBallTrianglesDensity != ballTrianglesDensity) {
-            texturedCubeMesh.Draw(newBallTrianglesDensity);
+            ballMesh.Draw(newBallTrianglesDensity);
             ballTrianglesDensity = newBallTrianglesDensity;
         }
 
@@ -355,9 +355,9 @@ public class GameRenderer implements GLSurfaceView.Renderer {
         Matrix.setRotateM(rotationYMatrix, 0, yAngle, 0, 1.0f, 0);
         Matrix.multiplyMM(rotationMatrix, 0, rotationXMatrix, 0, rotationYMatrix, 0);
 
-        drawBall(texturedCubeMesh.getPositionBuffer(), null,
-                texturedCubeMesh.getNormalBuffer(), texturedCubeMesh.getTexCoordsBuffer(),
-                ballTexShaders, texturedCubeMesh.getNumberOfVertices());
+        drawBall(ballMesh.getPositionBuffer(), null,
+                ballMesh.getNormalBuffer(), ballMesh.getTexCoordsBuffer(),
+                ballTexShaders, ballMesh.getNumberOfVertices());
     }
 
     void setXAngle(float xAngle) {
